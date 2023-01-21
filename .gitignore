@@ -1,0 +1,7 @@
+.env
+.idea
+.terraform
+*.tfstate**
+.vscode/**
+!.vscode/extensions.json
+dates
