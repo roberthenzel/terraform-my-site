@@ -1,0 +1,41 @@
+name: CI setup-website
+run-name: Setup website infrastructure
+on: 
+  workflow_run:
+    workflows:
+      - "CI create-token"
+    types:
+      - "completed"
+jobs:
+  check-file-changes:
+    runs-on: ubuntu-latest
+    environment: dev
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    outputs:
+      files_changed: ${{ steps.check_file_changed.outputs.files_changed }}
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        # Checkout as many commits as needed for the diff
+        fetch-depth: 2
+    - id: check_file_changed
+      run: |
+        diff=$(git diff --name-only HEAD^ HEAD)
+        if echo $diff | grep -q roberthenzel.com; then echo "files_changed=roberthenzel.com" >> $GITHUB_OUTPUT; fi
+
+  manage-roberthenzel:
+    runs-on: ubuntu-latest
+    environment: dev
+    needs: check-file-changes
+    if: needs.check-file-changes.outputs.files_changed == 'roberthenzel.com'
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+
+      - name: terraform
+        env:
+          TF_VAR_cloudflare_api_token_roberthenzel: '${{ secrets.TF_VAR_CLOUDFLARE_API_TOKEN_ROBERTHENZEL }}'
+        run: |
+          cd roberthenzel.com
+          terraform init
+          terraform plan

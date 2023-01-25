@@ -1,4 +1,4 @@
-output "cloudflare_api_token_roberthenzel" {
-  value = cloudflare_api_token.roberthenzel
+output "cloudflare_api_token_website" {
+  value = cloudflare_api_token.website
   sensitive = true
 }
