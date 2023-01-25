@@ -1,6 +1,6 @@
 data "cloudflare_api_token_permission_groups" "all" {}
 
-resource "cloudflare_api_token" "roberthenzel" {
+resource "cloudflare_api_token" "website" {
   name = "${var.domain}"
 
   # include all zones

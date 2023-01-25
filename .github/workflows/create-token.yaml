@@ -1,0 +1,34 @@
+name: CI create-token
+run-name: Create Token
+on: [push]
+jobs:
+  create-token:
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+      
+      - name: Install terraform
+        run: |
+          sudo apt-get -y install unzip
+          wget https://releases.hashicorp.com/terraform/1.3.7/terraform_1.3.7_linux_amd64.zip
+          unzip terraform_1.3.7_linux_amd64.zip
+          sudo mv terraform /usr/local/bin/
+      
+      - id: files
+        uses: tj-actions/changed-files@v35
+
+      - name: Init and apply Terraform
+        env:
+          TF_VAR_cloudflare_api_token_create: '${{ secrets.TF_VAR_CLOUDFLARE_API_TOKEN_CREATE }}'
+          TF_VAR_cloudflare_email: '${{ secrets.TF_VAR_CLOUDFLARE_EMAIL }}'
+        run: |
+          if echo ${{ steps.files.outputs.all_changed_files }} | grep -q roberthenzel.com; then domain=roberthenzel.com; fi
+          cd token
+          terraform init
+          terraform apply -var "domain=$domain" -auto-approve -json > output.json
+          export token=$(cat output.json | jq -r '.cloudflare_api_token_website.value.value')
+      
+      - name: Set token as secret
+        run: echo "::set-secret name=TF_VAR_CLOUDFLARE_API_TOKEN_WEBSITE::$(echo $token)"
